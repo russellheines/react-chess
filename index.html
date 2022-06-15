@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chess!</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <style>
+        div, img {
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        html {
+            font-family: sans-serif;
+            font-size: 12px;
+        }
+        body {
+            background-color: rgb(237, 235, 233) !important; /* override Bootstrap - why Bootstrap? glyphicons */
+        }
+        .game {
+            display: flex;
+            justify-content: center;
+        }
+        .board {
+            height: 576px; /* 8 x 72px */
+            width: 576px; /* 8 x 72px */
+            display: flex;
+            flex-wrap: wrap;
+            box-shadow:
+                    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                    0 3px 1px -2px rgba(0, 0, 0, 0.2),
+                    0 1px 5px 0 rgba(0, 0, 0, 0.12);
+            margin: 20px;
+        }
+        .square {
+            width: 72px;
+            height: 72px;
+        }
+        .light {
+            background-color: rgb(240, 217, 181);
+        }
+        .light.selected {
+            background-color: rgb(130, 151, 105);
+        }
+        .light.legal:hover, .light.legal-capture:hover {
+            background-color: rgb(174, 177, 135);
+        }
+        .light.lastmove {
+            background-color: rgb(205, 210, 106);
+        }
+        .dark {
+            background-color: rgb(181, 136, 99);
+        }
+        .dark.selected {
+            background-color: rgb(100, 111, 64);
+        }
+        .dark.legal:hover, .dark.legal-capture:hover {
+            background-color: rgb(132, 121, 78);
+        }
+        .dark.lastmove {
+            background-color: rgb(170, 162, 58);
+        }
+        .legal {
+            background-image: radial-gradient(rgba(20, 85, 30, 0.5) 19%, rgba(0, 0, 0, 0) 20%);
+        }
+        .legal-capture {
+            background-image: radial-gradient(transparent 0%, transparent 79%, rgba(20, 85, 0, 0.3) 80%);
+        }
+        .check {
+            background-image: radial-gradient(ellipse at center, red 0%, #e70000 25%, rgba(169,0,0,0) 89%, rgba(158,0,0,0) 100%);
+        }
+        .controls {
+            width: 400px;
+            height: 270px;
+            align-self: center;
+            background-color: rgb(255, 255, 255);
+            display: flex;
+            flex-direction: column;
+            box-shadow:
+                    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                    0 3px 1px -2px rgba(0, 0, 0, 0.2),
+                    0 1px 5px 0 rgba(0, 0, 0, 0.12);
+            margin: 20px;
+        }
+        .buttons {
+            display: flex;
+            height: 30px;
+            background-color: rgb(247, 246, 245);
+            box-shadow:
+                    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                    0 3px 1px -2px rgba(0, 0, 0, 0.2),
+                    0 1px 5px 0 rgba(0, 0, 0, 0.12);
+        }
+        .fbt {
+            flex-grow: 1;
+            border: none;
+            background: none;
+        }
+        .fbt.disabled {
+            opacity: 0.5;
+        }
+        .fbt:hover:not(.disabled) {
+            background-color: rgb(137,178,91);
+            color: rgb(255,255,255)
+        }
+        .fbt:focus {
+            outline: 0; /* https://stackoverflow.com/questions/20340138/remove-blue-border-from-css-custom-styled-button-in-chrome */
+        }
+        .movetexts {
+            display: flex;
+            flex-wrap: wrap;
+            overflow-y: auto;
+        }
+        .movenumber {
+            flex: 0 0 20%;
+            background-color: rgb(247, 246, 245);
+            text-align: center;
+        }
+        .movetext {
+            flex: 0 0 40%;
+        }
+        .movenumber div, .movetext div {
+            padding: 6px;
+        }
+        .movetext.current {
+            background-color: rgb(209,228,246);
+        }
+        .movetext:hover:not(.current) {
+            background-color: rgb(27, 120, 208);
+            color: rgb(255,255,255)
+        }
+    </style>
+    <script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+</head>
+<body>
+
+<div id="root"></div>
+<script type="text/babel">
+
+    const BLACK_ROOK = 1;
+    const BLACK_KNIGHT = 2;
+    const BLACK_BISHOP = 3;
+    const BLACK_QUEEN = 4;
+    const BLACK_KING = 5;
+    const BLACK_PAWN = 6;
+    const WHITE_ROOK = 7;
+    const WHITE_KNIGHT = 8;
+    const WHITE_BISHOP = 9;
+    const WHITE_QUEEN = 10;
+    const WHITE_KING = 11;
+    const WHITE_PAWN = 12;
+
+    function Square(props) {
+        return (
+            <div className={`square ${props.shade} ${props.isSelected ? "selected" : ""} ${props.isLastMove ? "lastmove" : ""}`} onClick={props.handleClickSquare}>
+                {props.piece === BLACK_ROOK && <img src="img/rdt45.svg"/>}
+                {props.piece === BLACK_KNIGHT && <img src="img/ndt45.svg"/>}
+                {props.piece === BLACK_BISHOP && <img src="img/bdt45.svg"/>}
+                {props.piece === BLACK_QUEEN && <img src="img/qdt45.svg"/>}
+                {props.piece === BLACK_KING && <img src="img/kdt45.svg"/>}
+                {props.piece === BLACK_PAWN && <img src="img/pdt45.svg"/>}
+                {props.piece === WHITE_ROOK && <img src="img/rlt45.svg"/>}
+                {props.piece === WHITE_KNIGHT && <img src="img/nlt45.svg"/>}
+                {props.piece === WHITE_BISHOP && <img src="img/blt45.svg"/>}
+                {props.piece === WHITE_QUEEN && <img src="img/qlt45.svg"/>}
+                {props.piece === WHITE_KING && <img src="img/klt45.svg"/>}
+                {props.piece === WHITE_PAWN && <img src="img/plt45.svg"/>}
+            </div>
+        );
+    }
+
+    //ReactDOM.render(<Square shade="light" piece={BLACK_PAWN}/>, document.getElementById('root'))
+
+    class Board extends React.Component {
+        renderSquare(col, row) {
+            return (
+                <Square
+                    shade={col % 2 === row % 2 ? "light" : "dark"}
+                    piece={this.props.pieces[col][row]}
+                    isSelected={
+                        (this.props.selected != null) && (this.props.selected.col === col) && (this.props.selected.row === row)
+                    }
+                    isLastMove={
+                        (this.props.lastMoves != null) &&
+                        (((this.props.lastMoves.fromCol === col) && (this.props.lastMoves.fromRow === row)) ||
+                         ((this.props.lastMoves.toCol === col) && (this.props.lastMoves.toRow === row)))
+                    }
+                    handleClickSquare={() => this.props.handleClickSquare(col, row)}
+                />
+            );
+        }
+
+        render() {
+            const squares = [];
+
+            for (let col = 0; col <= 7; col++) {
+                for (let row = 0; row <= 7; row++) {
+                    squares.push(this.renderSquare(row, col));
+                }
+            }
+
+            if(this.props.orientation === "black") {
+                squares.reverse();
+            }
+
+            return (
+                <div className="board">
+                    {squares}
+                </div>
+            );
+        }
+    }
+
+    let testPieces = [[1, 6, 0, 0, 0, 0, 12, 7],
+        [2, 6, 0, 0, 0, 0, 12, 8],
+        [3, 6, 0, 0, 0, 0, 12, 9],
+        [4, 6, 0, 0, 0, 0, 12, 10],
+        [5, 6, 0, 0, 0, 0, 12, 11],
+        [3, 6, 0, 0, 0, 0, 12, 9],
+        [2, 6, 0, 0, 0, 0, 12, 8],
+        [1, 6, 0, 0, 0, 0, 12, 7]];
+    let testSelected = null;
+    let testHandleClickSquare = (col, row) => alert("You clicked " + col + ", " + row);
+    let testBoard = (
+        <Board
+            pieces={testPieces}
+            selected={testSelected}
+            handleClickSquare={testHandleClickSquare}
+        />
+    );
+
+    //ReactDOM.render(testBoard, document.getElementById('root'))
+
+    class Controls extends React.Component {
+        render() {
+            const divs = [];
+
+            for (let i = 0; i < this.props.moveText.length; i++) {
+                if (i % 2 === 0) {
+                    divs.push(
+                        <div className="movenumber">
+                            <div>{i/2+1}</div>
+                        </div>
+                    );
+                }
+                divs.push(
+                    <div className={`movetext ${this.props.current-1 === i ? "current" : ""}`} onClick={() => this.props.handleClickMoveText(i)}>
+                        <div>{this.props.moveText[i]}</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="controls">
+                    <div className="buttons">
+                        <button className="fbt glyphicon glyphicon-retweet"
+                                onClick={() => this.props.handleClickFlipBoard()}
+                        />
+                        <button className={`fbt glyphicon glyphicon-fast-backward ${this.props.current === 0 ? "disabled" : ""}`}
+                                onClick={() => this.props.handleClickFastBackward()}
+                                disabled={this.props.current === 0}
+                        />
+                        <button className={`fbt glyphicon glyphicon-step-backward ${this.props.current === 0 ? "disabled" : ""}`}
+                                onClick={() => this.props.handleClickStepBackward()}
+                                disabled={this.props.current === 0}
+                        />
+                        <button className={`fbt glyphicon glyphicon-step-forward ${this.props.current === this.props.moveText.length ? "disabled" : ""}`}
+                                onClick={() => this.props.handleClickStepForward()}
+                                disabled={this.props.current === this.props.moveText.length}
+                        />
+                        <button className={`fbt glyphicon glyphicon-fast-forward ${this.props.current === this.props.moveText.length ? "disabled" : ""}`}
+                                onClick={() => this.props.handleClickFastForward()}
+                                disabled={this.props.current === this.props.moveText.length}
+                        />
+                    </div>
+                    <div className="movetexts">
+                        {divs}
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    const testHistory = ["e4", "e5", "Nf3", "Nc6", "Bb5"];
+    const testHandleClickMoveText = (i) => alert("You clicked " + i);
+    let testControls = (
+        <Controls
+            history={testHistory}
+            handleClickMoveText={testHandleClickMoveText}
+        />
+    );
+
+    //ReactDOM.render(testControls, document.getElementById('root'));
+
+    class Game extends React.Component {
+        constructor(props) {
+            super(props);
+
+            // TODO?
+
+            const initial = [[1, 6, 0, 0, 0, 0, 12, 7],
+                [2, 6, 0, 0, 0, 0, 12, 8],
+                [3, 6, 0, 0, 0, 0, 12, 9],
+                [4, 6, 0, 0, 0, 0, 12, 10],
+                [5, 6, 0, 0, 0, 0, 12, 11],
+                [3, 6, 0, 0, 0, 0, 12, 9],
+                [2, 6, 0, 0, 0, 0, 12, 8],
+                [1, 6, 0, 0, 0, 0, 12, 7]];
+
+            this.state = {
+                history: [{pieces: initial}],
+                current: 0,
+                orientation: "white",
+                selected: null,
+                moveText: [],
+                lastMoves: [{fromCol: null, fromRow: null, toCol: null, toRow: null}]
+            };
+
+            // This binding is necessary to make "this" work in the callback
+            this.handleClickSquare = this.handleClickSquare.bind(this);
+            this.handleClickFlipBoard = this.handleClickFlipBoard.bind(this);
+            this.handleClickFastBackward = this.handleClickFastBackward.bind(this);
+            this.handleClickStepBackward = this.handleClickStepBackward.bind(this);
+            this.handleClickStepForward = this.handleClickStepForward.bind(this);
+            this.handleClickFastForward = this.handleClickFastForward.bind(this);
+            this.handleClickMoveText = this.handleClickMoveText.bind(this);
+        }
+
+        moveText(piece, col, row) {
+            let moveText = String.fromCharCode(97 + col) + (8 - row);  // 97 = 'a'
+
+            if ((piece === WHITE_ROOK) || (piece === BLACK_ROOK)) {
+                moveText = "R" + moveText;
+            }
+            else if ((piece === WHITE_KNIGHT) || (piece === BLACK_KNIGHT)) {
+                moveText = "N" + moveText;
+            }
+            else if ((piece === WHITE_BISHOP) || (piece === BLACK_BISHOP)) {
+                moveText = "B" + moveText;
+            }
+            else if ((piece === WHITE_QUEEN) || (piece === BLACK_QUEEN)) {
+                moveText = "Q" + moveText;
+            }
+            else if ((piece === WHITE_KING) || (piece === BLACK_KING)) {
+                moveText = "K" + moveText;
+            }
+
+            return moveText;
+        }
+
+        handleClickSquare(col, row) {
+            if (this.state.selected === null) {
+                this.setState({selected: {col: col, row: row}});
+            }
+            else if ((this.state.selected.col === col) && (this.state.selected.row === row)) {
+                return;
+            }
+            else {
+                const history = this.state.history.slice(0, this.state.current+1);
+                const current = history[history.length-1];
+
+                // deep copy, two-dimensional array
+                const pieces = [
+                    current.pieces[0].slice(),
+                    current.pieces[1].slice(),
+                    current.pieces[2].slice(),
+                    current.pieces[3].slice(),
+                    current.pieces[4].slice(),
+                    current.pieces[5].slice(),
+                    current.pieces[6].slice(),
+                    current.pieces[7].slice()
+                ]
+
+                const moveText = this.state.moveText.slice(0, this.state.current);
+                const lastMoves = this.state.lastMoves.slice(0, this.state.current+1);
+
+                pieces[col][row] = pieces[this.state.selected.col][this.state.selected.row];
+                pieces[this.state.selected.col][this.state.selected.row] = 0;
+
+                let newMoveText = this.moveText(pieces[col][row], col, row);
+
+                this.setState({history: history.concat({pieces: pieces})});
+                this.setState({current: this.state.current+1});
+                this.setState({selected: null});
+                this.setState({moveText: moveText.concat(newMoveText)});
+                this.setState({lastMoves: lastMoves.concat({
+                        fromCol: this.state.selected.col,
+                        fromRow: this.state.selected.row,
+                        toCol: col,
+                        toRow: row
+                })});
+            }
+        }
+
+        handleClickFlipBoard() {
+            if (this.state.orientation === "white") {
+                this.setState({orientation: "black"});
+            }
+            else {
+                this.setState({orientation: "white"});
+            }
+        }
+
+        handleClickFastBackward() {
+            this.setState({current: 0});
+        }
+
+        handleClickStepBackward() {
+            this.setState({current: this.state.current-1});
+        }
+
+        handleClickStepForward() {
+            this.setState({current: this.state.current+1});
+        }
+
+        handleClickFastForward() {
+            this.setState({current: this.state.history.length-1});
+        }
+
+        handleClickMoveText(i) {
+            this.setState({current: i+1});
+        }
+
+        render() {
+            return (
+                <div className="game">
+                    <Board
+                        pieces={this.state.history[this.state.current].pieces}
+                        orientation={this.state.orientation}
+                        selected={this.state.selected}
+                        lastMoves={this.state.lastMoves[this.state.current]}
+                        handleClickSquare={this.handleClickSquare}
+                    />
+                    <Controls
+                        moveText={this.state.moveText}
+                        current={this.state.current}
+                        handleClickFlipBoard={this.handleClickFlipBoard}
+                        handleClickFastBackward={this.handleClickFastBackward}
+                        handleClickStepBackward={this.handleClickStepBackward}
+                        handleClickStepForward={this.handleClickStepForward}
+                        handleClickFastForward={this.handleClickFastForward}
+                        handleClickMoveText={this.handleClickMoveText}
+                    />
+                </div>
+            );
+        }
+
+        componentDidUpdate() {
+            let current = document.getElementsByClassName("current");
+            if (current.length > 0) {
+                current.item(0).scrollIntoView();
+            }
+        }
+    }
+
+    ReactDOM.render(<Game/>, document.getElementById('root'));
+</script>
+</body>
+</html>

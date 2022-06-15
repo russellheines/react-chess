@@ -1,0 +1,136 @@
+html {
+    font-family: sans-serif;
+    font-size: 12px;
+}
+body {
+    background-color: rgb(237, 235, 233) !important; /* override Bootstrap - why Bootstrap? glyphicons */
+}
+.game {
+    display: flex;
+    justify-content: center;
+}
+.board {
+    height: 576px; /* 8 x 72px */
+    width: 576px; /* 8 x 72px */
+    display: flex;
+    flex-wrap: wrap;
+    box-shadow:
+            0 2px 2px 0 rgba(0, 0, 0, 0.14),
+            0 3px 1px -2px rgba(0, 0, 0, 0.2),
+            0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    margin: 20px;
+}
+.square {
+    width: 72px;
+    height: 72px;
+}
+.light {
+    background-color: rgb(240, 217, 181);
+}
+.light.selected {
+    background-color: rgb(130, 151, 105);
+}
+.light.legal:hover, .light.legal-capture:hover {
+    background-color: rgb(174, 177, 135);
+}
+.light.lastmove {
+    background-color: rgb(205, 210, 106);
+}
+.dark {
+    background-color: rgb(181, 136, 99);
+}
+.dark.selected {
+    background-color: rgb(100, 111, 64);
+}
+.dark.legal:hover, .dark.legal-capture:hover {
+    background-color: rgb(132, 121, 78);
+}
+.dark.lastmove {
+    background-color: rgb(170, 162, 58);
+}
+.legal {
+    background-image: radial-gradient(rgba(20, 85, 30, 0.5) 19%, rgba(0, 0, 0, 0) 20%);
+}
+.legal-capture {
+    background-image: radial-gradient(transparent 0%, transparent 79%, rgba(20, 85, 0, 0.3) 80%);
+}
+.check {
+    background-image: radial-gradient(ellipse at center, red 0%, #e70000 25%, rgba(169,0,0,0) 89%, rgba(158,0,0,0) 100%);
+}
+
+.controls {
+    width: 400px;
+    height: 270px;
+    align-self: center;
+    background-color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+            0 2px 2px 0 rgba(0, 0, 0, 0.14),
+            0 3px 1px -2px rgba(0, 0, 0, 0.2),
+            0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    margin: 20px;
+}
+/*
+.dot {
+    height: 12px;
+    width: 12px;
+    background-color: rgb(114,163,58);
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+.username {
+    font-size: 16px;
+    margin: 6px 4px 6px 4px;
+}
+ */
+.fbuttons {
+    display: flex;
+    height: 30px;
+    background-color: rgb(247, 246, 245);
+    box-shadow:
+            0 2px 2px 0 rgba(0, 0, 0, 0.14),
+            0 3px 1px -2px rgba(0, 0, 0, 0.2),
+            0 1px 5px 0 rgba(0, 0, 0, 0.12);
+}
+.fbutton {
+    flex-grow: 1;
+    border: none;
+    background: none;
+}
+.fbutton.disabled {
+    opacity: 0.5;
+}
+.fbutton:hover:not(.disabled) {
+    background-color: rgb(137,178,91);
+    color: rgb(255,255,255)
+}
+.fbutton:focus {
+    outline: 0; /* https://stackoverflow.com/questions/20340138/remove-blue-border-from-css-custom-styled-button-in-chrome */
+}
+.movetexts {
+    display: flex;
+    flex-wrap: wrap;
+    overflow-y: auto;
+}
+.movenumber {
+    flex: 0 0 20%;
+    background-color: rgb(247, 246, 245);
+    text-align: center;
+}
+.movetext {
+    flex: 0 0 40%;
+}
+.movenumber div, .movetext div {
+    padding: 6px;
+}
+.movetext.current {
+    font-weight:bold;
+    background-color: rgb(209,228,246);
+}
+.movetext:hover:not(.current) {
+    background: rgb(27, 120, 208);
+    color: rgb(255,255,255)
+}
